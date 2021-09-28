@@ -5,7 +5,11 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
+import org.springframework.security.web.context.SecurityContextPersistenceFilter;
 import org.springframework.web.filter.CorsFilter;
+
+import com.cos.jwt.filter.MyFilter3;
 
 import lombok.RequiredArgsConstructor;
 
@@ -18,6 +22,9 @@ public class SecurityConfig  extends WebSecurityConfigurerAdapter{
 	
 	@Override
 	protected void configure(HttpSecurity http) throws Exception {
+		http.addFilterBefore(new MyFilter3(),SecurityContextPersistenceFilter.class);
+		//http.addFilter(new MyFilter1())이렇게만 설정을 해주면 하면 오류가 난다.
+		//오류가 나는 이유는 securityFilter가 아니기때문.
 		http.csrf().disable();
 		http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
 		//위와같이 설정하면 session을 사용하지 않고 stateless서버를 만들겠다는 설정이다.

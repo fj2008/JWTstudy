@@ -13,6 +13,8 @@ import org.springframework.web.filter.CorsFilter;
 
 import com.cos.jwt.filter.MyFilter3;
 import com.cos.jwt.jwt.JwtAuthenticationFilter;
+import com.cos.jwt.jwt.JwtAuthorizationFilter;
+import com.cos.jwt.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -22,6 +24,8 @@ import lombok.RequiredArgsConstructor;
 public class SecurityConfig  extends WebSecurityConfigurerAdapter{
 
 	private final CorsFilter corsFilter;
+	private final UserRepository userRepository;
+	
 	
 	@Bean
 	public BCryptPasswordEncoder passwordEncoder() {
@@ -44,7 +48,7 @@ public class SecurityConfig  extends WebSecurityConfigurerAdapter{
 		.addFilter(new JwtAuthenticationFilter(authenticationManager())) 
 		//이렇게 필터에 등록을 하고 꼭 던져줘야하는 파라메터가 있는데
 		//AuthenticationManger를 파라메터로 넘겨줘야한다.AuthenticationManger를 통해서 로그인을 하기때문
-		
+		.addFilter(new JwtAuthorizationFilter(authenticationManager(),userRepository)) 
 		.authorizeRequests()//다음과 같이 주소를 건다.
 		.antMatchers("/api/v1/user/**")
 		.access("hasRole('ROLE_USER') or hasRole('ROLE_MANAGER') or hasRole('ROLE_ADMIN')")

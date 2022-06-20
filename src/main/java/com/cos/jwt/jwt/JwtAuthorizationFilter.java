@@ -7,14 +7,14 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.algorithms.Algorithm;
+
 import com.cos.jwt.auth.PrincipalDetails;
 import com.cos.jwt.model.User;
 import com.cos.jwt.repository.UserRepository;
@@ -23,15 +23,20 @@ import com.cos.jwt.repository.UserRepository;
 //권한이나 인증이 필요한 특정 주소를 요청했을때 위 필터를 무조건 타게 되어있다.
 //만약에 권한이나 인증이 필요한 주소가 아니라면 이 필터를 타지 않는다
 
+@Slf4j
 public class JwtAuthorizationFilter extends BasicAuthenticationFilter{
 
 	private UserRepository userRepository;
+	private JWTTokenProvider jwtTokenProvider;
+
+	// /login요청을 하면 로그인 시도를 위해서 실행되는 함수
 	
 	
-	public JwtAuthorizationFilter(AuthenticationManager authenticationManager, UserRepository userRepository) {
+	public JwtAuthorizationFilter(AuthenticationManager authenticationManager, UserRepository userRepository, JWTTokenProvider jwtTokenProvider) {
 		super(authenticationManager);
 		this.userRepository = userRepository;
-	
+
+		this.jwtTokenProvider = jwtTokenProvider;
 	}
 	//인증이나 권한이 필요한 주소요청이 있을 때 해당 필터를 타게 된다.
 	@Override
@@ -44,20 +49,20 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter{
 		System.out.println("jwtheader: "+ jwtHeader);
 		
 		//header가 있는지 확인
-		if(jwtHeader == null || !jwtHeader.startsWith("Bearer")) {
+		if (jwtHeader == null || !jwtHeader.startsWith("Bearer")) {
 			chain.doFilter(request, response);
 			return;
 		}
-		
-		//JWT 토큰을 검증을 해서 정상적인 사용자 인지 확인
-		String jwttoken = request.getHeader("Authorization").replace("Bearer","");//이렇게하면 jWT만 추출되게 파싱할수 있다.
-		
-		//전자서명
-		String username =
-				JWT.require(Algorithm.HMAC512("cos")).build().verify(jwttoken).getClaim("username").asString();
-		
+		String jwtToken = jwtTokenProvider.resolveToken(request);
+		if (!jwtTokenProvider.validateToken(jwtToken)) {
+			chain.doFilter(request, response);
+			return;
+		}
+
+		String username = jwtTokenProvider.getUserPk(jwtToken);
+		log.info("user정보 : {}", username);
 		//서명이 정상적으로 됨
-		if(username != null) {
+		if (username != null) {
 			
 			User userEntity = userRepository.findByUsername(username);//정상적으로 select되면 정상적인 사용자
 			

@@ -1,0 +1,49 @@
+### 로그인
+POST http://localhost:8080/auth/login
+Content-Type: application/json
+
+{
+  "username": "cos",
+  "password" : "1234"
+}
+> {%
+client.global.set("JWT", response.headers.valueOf("Authorization").split("Bearer ")[1]);
+client.log(client.global.get("JWT"));
+%}
+
+### 회원가입
+POST http://localhost:8080/join
+Content-Type: application/json
+Authorization: cos
+
+{
+  "username": "cos",
+  "password" : "1234"
+}
+
+### user권한일때
+GET http://localhost:8080/api/v1/user
+Accept: application/json
+Authorization: Bearer {{JWT}}
+
+> {%
+client.log(client.global.get("JWT"));
+%}
+
+### manage권한일때
+GET http://localhost:8080/api/v1/manager
+Accept: application/json
+Authorization: Bearer {{JWT}}
+
+> {%
+client.log(client.global.get("JWT"));
+%}
+
+### admin권한일때
+GET http://localhost:8080/api/v1/admin
+Accept: application/json
+Authorization: Bearer {{JWT}}
+
+> {%
+client.log(client.global.get("JWT"));
+%}
